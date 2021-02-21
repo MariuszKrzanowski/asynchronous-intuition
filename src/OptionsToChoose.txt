@@ -18,6 +18,8 @@ Q - EXIT
 
 ***SemaphoreSlim***
 4A deadlock by concurrent access
-4A deadlock by dispose
+4B deadlock by dispose
 
-
+***Execution time***
+5A - longer task is shorter V1
+5B - longer task is shorter V2
