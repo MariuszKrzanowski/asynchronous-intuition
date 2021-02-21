@@ -27,8 +27,7 @@ namespace MrMatrix.Net.AllSamples.Samples5
             if (@override)
             {
                 // override priority 
-                _thread.Priority = _id >= 10 ? ThreadPriority.Highest : ThreadPriority.Lowest;
-                _thread.IsBackground = _id < 10;
+                _thread.Priority = _id % 2 == 0 ? ThreadPriority.Highest : ThreadPriority.Lowest;
             }
             #endregion
         }

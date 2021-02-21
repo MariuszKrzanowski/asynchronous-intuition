@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,10 +7,10 @@ namespace MrMatrix.Net.AllSamples.Samples4
 {
     public class PresentationSample4B : IPresentationSample
     {
-        ManualResetEvent _barier = new ManualResetEvent(false);
         SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
         ManualResetEvent _taskDisposingStarted = new ManualResetEvent(false);
         ManualResetEvent _taskWaitingStarted = new ManualResetEvent(false);
+        CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public Task Prepare()
         {
@@ -18,28 +19,97 @@ namespace MrMatrix.Net.AllSamples.Samples4
 
         public async Task Run()
         {
-            var taskDisposing = Task.Run(TaskDisposing);
-            var taskAwaiting = Task.Run(TaskWaiting);
+            List<Task> allTasks = new List<Task>();
+            allTasks.Add(TaskDisposing());
+            allTasks.Add(TaskWaiting(1));
+            allTasks.Add(TaskWaiting(2));
+            allTasks.Add(TaskWaiting(3));
 
             _taskDisposingStarted.WaitOne();
             _taskWaitingStarted.WaitOne();
-            _barier.Set();
-            await Task.WhenAll();
+            await Task.WhenAll(allTasks.ToArray());
         }
 
         private async Task TaskDisposing()
         {
-            await _semaphoreSlim.WaitAsync();
             _taskDisposingStarted.Set();
-            _barier.WaitOne();
+
+
+            Console.WriteLine("TaskDisposing before WaitAsync.");
+            await _semaphoreSlim.WaitAsync();
+            Console.WriteLine("TaskDisposing after WaitAsync.");
+            await Task.Delay(2000);
+            Console.WriteLine("TaskDisposing before Release.");
+            _semaphoreSlim.Release();
+            Console.WriteLine("TaskDisposing after Release.");
+            await Task.Delay(2000);
+            Console.WriteLine("************ TaskDisposing before Dispose.");
+            //_cancellationTokenSource.Cancel();
+            _semaphoreSlim.Dispose();
+            _cancellationTokenSource.Cancel();
+            Console.WriteLine("************ TaskDisposing after Dispose.");
+            Console.WriteLine("TaskDisposing DONE");
+
         }
 
-        private async Task TaskWaiting()
+        private async Task TaskWaiting(int id)
         {
-            _taskWaitingStarted.Set();
-            _barier.WaitOne();
-            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                _taskWaitingStarted.Set();
 
+                for (int repeat = 0; repeat < 3; repeat++)
+                {
+                    //await Task.Delay(9_000);
+                    await Task.Delay(1_000);
+
+                    Console.WriteLine($"TaskWaiting({id}) before WaitAsync.");
+
+                    #region Variant with WaitAsync
+                    await _semaphoreSlim.WaitAsync();
+                    #endregion
+
+
+                    #region
+                    //if (!await _semaphoreSlim.WaitAsync(TimeSpan.FromSeconds(10)))
+                    //{
+                    //    Console.WriteLine($"TaskWaiting({id}) after Timeout.");
+                    //    return;
+                    //}
+                    #endregion
+
+                    #region
+                    //if (!await _semaphoreSlim.WaitAsync(TimeSpan.FromSeconds(10), _cancellationTokenSource.Token))
+                    //{
+                    //    Console.WriteLine($"TaskWaiting({id}) after Timeout.");
+                    //    return;
+                    //}
+                    #endregion
+
+                    #region
+                    //await _semaphoreSlim.WaitAsync(_cancellationTokenSource.Token);
+                    #endregion
+
+                    Console.WriteLine($"TaskWaiting({id}) after WaitAsync.");
+
+                    await Task.Delay(2000);
+                    Console.WriteLine($"TaskWaiting({id}) before Release.");
+                    _semaphoreSlim.Release();
+                    Console.WriteLine($"TaskWaiting({id}) after Release.");
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine($"TaskWaiting({id}) Canceled.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"TaskWaiting({id}) ERROR {ex.Message}.");
+            }
+            finally
+            {
+                Console.WriteLine($"TaskWaiting({id}) DONE.");
+            }
         }
 
         public Task Cleanup()
