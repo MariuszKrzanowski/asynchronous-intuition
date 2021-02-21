@@ -66,24 +66,25 @@ namespace MrMatrix.Net.AllSamples.Properties {
         ///Q - EXIT
         ///
         ///***Async vs no async*** 
-        ///1A - Async vs no async. Version WITH Async
-        ///1B - Async vs no async. Version WITHOUT sync.
+        ///1A - Version WITH Async
+        ///1B - Version WITHOUT sync.
         ///
-        ///***Action Block***
+        ///*** Action Block ***
         ///2A - Sample from Microsoft
         ///2B - Sample with worker command working well
         ///2C - Sample with worker command failing
         ///2D - Sample with worker command failing extra logging
         ///
-        ///***Concurrent Dictionary***
+        ///*** Concurrent Dictionary ***
         ///3A GetOrAdd
-        ///3B Remove and GetOrAdd timing ?
+        ///3B GetOrAdd and Remove 
         ///
         ///***SemaphoreSlim***
         ///4A deadlock by concurrent access
+        ///4B deadlock by dispose
         ///
-        ///
-        ///.
+        ///***Execution time***
+        ///5A -  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string OptionsToChoose {
             get {
