@@ -5,30 +5,6 @@ using System.Threading.Tasks;
 
 namespace MrMatrix.Net.AllSamples.Samples1
 {
-    internal class PresentaionSample1Async : PresentaionSample1AsyncOrNoAsync
-    {
-        public PresentaionSample1Async() : base(new[] {
-                new SomethingHaveToDoServiceWithAsync(ServiceType.Fast),
-                new SomethingHaveToDoServiceWithAsync(ServiceType.Slow),
-                new SomethingHaveToDoServiceWithAsync(ServiceType.FailingFast),
-                new SomethingHaveToDoServiceWithAsync(ServiceType.FailingSlow),
-            })
-        {
-        }
-    }
-
-    internal class PresentaionSample1NoAsync : PresentaionSample1AsyncOrNoAsync
-    {
-        public PresentaionSample1NoAsync() : base(new[] {
-                new SomethingHaveToDoServiceWithoutAsync(ServiceType.Fast),
-                new SomethingHaveToDoServiceWithoutAsync(ServiceType.Slow),
-                new SomethingHaveToDoServiceWithoutAsync(ServiceType.FailingFast),
-                new SomethingHaveToDoServiceWithoutAsync(ServiceType.FailingSlow),
-            })
-        {
-        }
-    }
-
     internal abstract class PresentaionSample1AsyncOrNoAsync : IPresentationSample
     {
         ISomethingHaveToDoService[] _services;
