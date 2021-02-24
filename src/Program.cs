@@ -30,16 +30,19 @@ namespace MrMatrix.Net.AllSamples
                 {
                     "1A" => new PresentaionSample1Async(),
                     "1B" => new PresentaionSample1NoAsync(),
-                    "2A" => new PresentaionSample2A(),
-                    "2B" => new PresentaionSample2B(),
-                    "2C" => new PresentaionSample2C(),
-                    "2D" => new PresentaionSample2D(),
-                    "3A" => new PresentationSample3A(),
-                    "3B" => new PresentationSample3B(),
-                    "4A" => new PresentationSample4A(),
-                    "4B" => new PresentationSample4B(),
-                    "5A" => new PresentationSample5(false),
-                    "5B" => new PresentationSample5(true),
+
+                    "2A" => new PresentationSample5(false),
+                    "2B" => new PresentationSample5(true),
+
+                    "3A" => new PresentaionSample2A(),
+                    "3B" => new PresentaionSample2B(),
+                    "3C" => new PresentaionSample2C(),
+                    "3D" => new PresentaionSample2D(),
+                    "4A" => new PresentationSample3A(),
+                    "4B" => new PresentationSample3B(),
+                    "5A" => new PresentationSample4A(),
+                    "5B" => new PresentationSample4B(),
+                    
                     _ => null
                 };
 
