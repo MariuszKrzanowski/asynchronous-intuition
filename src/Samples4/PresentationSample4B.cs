@@ -8,19 +8,22 @@ using System.Threading.Tasks;
 
 namespace MrMatrix.Net.AllSamples.Samples3
 {
-    public class PresentationSample3A : IPresentationSample
+    public class PresentationSample4B : IPresentationSample
     {
         private class Result
         {
             public int OriginatorId { get; set; }
 
             public string AddedValue { get; set; }
+            public string RemovedValue { get; set; } = "----------";
+
             public string GeneratedValue { get; set; } = "----------";
 
             public TimeSpan Elapsed { get; set; }
 
             public int TimespanA { get; set; }
             public int TimespanB { get; set; }
+            public int TimespanC { get; set; }
         }
 
 
@@ -30,7 +33,7 @@ namespace MrMatrix.Net.AllSamples.Samples3
         ConcurrentDictionary<int, string> _concurrentDictionary;
         ConcurrentQueue<Result> _testResults;
 
-        public PresentationSample3A()
+        public PresentationSample4B()
         {
             _manualResetEvent = new ManualResetEvent(false);
             _counter = 0;
@@ -39,14 +42,9 @@ namespace MrMatrix.Net.AllSamples.Samples3
             _testResults = new ConcurrentQueue<Result>();
         }
 
-
-
         public Task Prepare()
         {
-
-
             return Task.CompletedTask;
-
         }
 
         public async Task Run()
@@ -93,6 +91,14 @@ namespace MrMatrix.Net.AllSamples.Samples3
 
             });
             result.TimespanB = Interlocked.Increment(ref _timespan);
+            
+            Thread.Sleep(500);
+            if (_concurrentDictionary.TryRemove(1, out var removedValue))
+            {
+                result.RemovedValue = removedValue;
+                result.TimespanC = Interlocked.Increment(ref _timespan);
+            }
+            
             sw.Stop();
             result.Elapsed = sw.Elapsed;
             _testResults.Enqueue(result);
@@ -106,7 +112,6 @@ namespace MrMatrix.Net.AllSamples.Samples3
             {
                 results.Add(result);
             }
-
 
             foreach (var result in results.OrderBy(r => r.OriginatorId))
             {
@@ -123,6 +128,10 @@ namespace MrMatrix.Net.AllSamples.Samples3
                     {
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
                     }
+                    if (i == result.TimespanC)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                    }
                     Console.Write("■");
                     Console.ResetColor();
                 }
@@ -131,10 +140,12 @@ namespace MrMatrix.Net.AllSamples.Samples3
                 Console.Write($"[{result.GeneratedValue}]");
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.Write($"[{result.AddedValue}]");
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write($"[{result.RemovedValue}]");
                 Console.ResetColor();
                 Console.Write($"[{result.Elapsed}]");
             }
-
+          
             return Task.CompletedTask;
         }
 

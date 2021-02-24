@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MrMatrix.Net.AllSamples.Samples4
 {
-    public class PresentationSample4A : IPresentationSample
+    public class PresentationSample5A : IPresentationSample
     {
         readonly SemaphoreSlim[] _semaphoreSlim = new SemaphoreSlim[]
             {

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MrMatrix.Net.AllSamples.Samples4
 {
-    public class PresentationSample4B : IPresentationSample
+    public class PresentationSample5B : IPresentationSample
     {
         SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
         ManualResetEvent _taskDisposingStarted = new ManualResetEvent(false);
