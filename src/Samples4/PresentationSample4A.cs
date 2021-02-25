@@ -1,27 +1,45 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MrMatrix.Net.AllSamples.Samples4
+namespace MrMatrix.Net.AllSamples.Samples3
 {
     public class PresentationSample4A : IPresentationSample
     {
-        readonly SemaphoreSlim[] _semaphoreSlim = new SemaphoreSlim[]
-            {
-                new SemaphoreSlim(1,1),
-                new SemaphoreSlim(1,1),
-                new SemaphoreSlim(1,1),
-                new SemaphoreSlim(1,1),
-                new SemaphoreSlim(1,1),
-                new SemaphoreSlim(1,1)
-        };
-
-
-        public Task Cleanup()
+        private class Result
         {
-            return Task.CompletedTask;
+            public int OriginatorId { get; set; }
+
+            public string AddedValue { get; set; }
+            public string GeneratedValue { get; set; } = "----------";
+
+            public TimeSpan Elapsed { get; set; }
+
+            public int TimespanA { get; set; }
+            public int TimespanB { get; set; }
         }
+
+
+        private ManualResetEvent _manualResetEvent = new ManualResetEvent(false);
+        private int _counter = 0;
+        private int _timespan = 0;
+        ConcurrentDictionary<int, string> _concurrentDictionary;
+        ConcurrentQueue<Result> _testResults;
+
+        public PresentationSample4A()
+        {
+            _manualResetEvent = new ManualResetEvent(false);
+            _counter = 0;
+            _timespan = 0;
+            _concurrentDictionary = new ConcurrentDictionary<int, string>();
+            _testResults = new ConcurrentQueue<Result>();
+        }
+
+
 
         public Task Prepare()
         {
@@ -30,59 +48,92 @@ namespace MrMatrix.Net.AllSamples.Samples4
 
         public async Task Run()
         {
-            Console.WriteLine();
-            const int batchSize = 50;
+            const int batchSize = 5;
             var tasks = new List<Task>();
             for (int id = 0; id < batchSize; id++)
             {
-                tasks.Add(MultipleLoopsWork());
+                var originatorId = id;
+                tasks.Add(Task.Factory.StartNew(() => SingleThread(originatorId), TaskCreationOptions.LongRunning));
+            }
+
+            _manualResetEvent.Set();
+            await Task.WhenAll(tasks.ToArray());
+            // When the key is ready
+
+            tasks = new List<Task>();
+            for (int id = batchSize; id < 2 * batchSize; id++)
+            {
+                var originatorId = id;
+                tasks.Add(Task.Factory.StartNew(() => SingleThread(originatorId), TaskCreationOptions.LongRunning));
             }
             await Task.WhenAll(tasks.ToArray());
-            Console.WriteLine();
         }
 
-        private async Task MultipleLoopsWork()
+        private void SingleThread(int originatorId)
         {
-            for (int i = 0; i < 20; i++)
+            var result = new Result()
             {
-                await WriterUnitOfWork();
-                await Task.Yield();
-            }
+                OriginatorId = originatorId
+            };
+
+            _manualResetEvent.WaitOne();
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            result.TimespanA = Interlocked.Increment(ref _timespan);
+            result.AddedValue = _concurrentDictionary.GetOrAdd(1, (key) =>
+            {
+                var currentCounter = Interlocked.Increment(ref _counter);
+                Thread.Sleep(currentCounter * 400);
+                result.GeneratedValue = $"id:{originatorId:00} c:{currentCounter:00}";
+                return result.GeneratedValue;
+
+            });
+            result.TimespanB = Interlocked.Increment(ref _timespan);
+            sw.Stop();
+            result.Elapsed = sw.Elapsed;
+            _testResults.Enqueue(result);
         }
 
-        private async Task WriterUnitOfWork()
+        public Task Cleanup()
         {
-            var tasks = new Task[_semaphoreSlim.Length];
+            List<Result> results = new List<Result>();
 
-            for (int i = 0; i < _semaphoreSlim.Length; i++)
+            while (_testResults.TryDequeue(out var result))
             {
-                tasks[i] = _semaphoreSlim[i].WaitAsync();
-
-                #region uncomment 1
-                //for (int k = 0; k < 1000; k++) 
-                //{ 
-                //}
-                #endregion
-
-                #region uncomment 2
-                // await tasks[0]; // This is not an error
-                // await tasks[i];
-                #endregion 
+                results.Add(result);
             }
 
-            #region uncomment 3
-            // await tasks[0]; // This is not an error
-            #endregion
-            await Task.WhenAll(tasks);
 
-            await Task.Yield();
-
-            Console.Write(".");
-            foreach (var s in _semaphoreSlim)
+            foreach (var result in results.OrderBy(r => r.OriginatorId))
             {
-                s.Release();
+                Console.WriteLine();
+                Console.Write($" Id {result.OriginatorId:00} |");
+                for (int i = 1; i <= _timespan; i++)
+                {
+                    Console.ForegroundColor = Console.BackgroundColor;
+                    if (i == result.TimespanA)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkBlue;
+                    }
+                    if (i == result.TimespanB)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    }
+                    Console.Write("■");
+                    Console.ResetColor();
+                }
+
+                Console.Write($"|    ");
+                Console.Write($"[{result.GeneratedValue}]");
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write($"[{result.AddedValue}]");
+                Console.ResetColor();
+                Console.Write($"[{result.Elapsed}]");
             }
 
+            return Task.CompletedTask;
         }
+
     }
 }

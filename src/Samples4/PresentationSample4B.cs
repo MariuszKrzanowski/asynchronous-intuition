@@ -1,16 +1,46 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MrMatrix.Net.AllSamples.Samples4
+namespace MrMatrix.Net.AllSamples.Samples3
 {
     public class PresentationSample4B : IPresentationSample
     {
-        SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1);
-        ManualResetEvent _taskDisposingStarted = new ManualResetEvent(false);
-        ManualResetEvent _taskWaitingStarted = new ManualResetEvent(false);
-        CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private class Result
+        {
+            public int OriginatorId { get; set; }
+
+            public string AddedValue { get; set; }
+            public string RemovedValue { get; set; } = "----------";
+
+            public string GeneratedValue { get; set; } = "----------";
+
+            public TimeSpan Elapsed { get; set; }
+
+            public int TimespanA { get; set; }
+            public int TimespanB { get; set; }
+            public int TimespanC { get; set; }
+        }
+
+
+        private ManualResetEvent _manualResetEvent = new ManualResetEvent(false);
+        private int _counter = 0;
+        private int _timespan = 0;
+        ConcurrentDictionary<int, string> _concurrentDictionary;
+        ConcurrentQueue<Result> _testResults;
+
+        public PresentationSample4B()
+        {
+            _manualResetEvent = new ManualResetEvent(false);
+            _counter = 0;
+            _timespan = 0;
+            _concurrentDictionary = new ConcurrentDictionary<int, string>();
+            _testResults = new ConcurrentQueue<Result>();
+        }
 
         public Task Prepare()
         {
@@ -19,102 +49,105 @@ namespace MrMatrix.Net.AllSamples.Samples4
 
         public async Task Run()
         {
-            List<Task> allTasks = new List<Task>();
-            allTasks.Add(TaskDisposing());
-            allTasks.Add(TaskWaiting(1));
-            allTasks.Add(TaskWaiting(2));
-            allTasks.Add(TaskWaiting(3));
+            const int batchSize = 5;
+            var tasks = new List<Task>();
+            for (int id = 0; id < batchSize; id++)
+            {
+                var originatorId = id;
+                tasks.Add(Task.Factory.StartNew(() => SingleThread(originatorId), TaskCreationOptions.LongRunning));
+            }
 
-            _taskDisposingStarted.WaitOne();
-            _taskWaitingStarted.WaitOne();
-            await Task.WhenAll(allTasks.ToArray());
+            _manualResetEvent.Set();
+            await Task.WhenAll(tasks.ToArray());
+            // When the key is ready
+
+            tasks = new List<Task>();
+            for (int id = batchSize; id < 2 * batchSize; id++)
+            {
+                var originatorId = id;
+                tasks.Add(Task.Factory.StartNew(() => SingleThread(originatorId), TaskCreationOptions.LongRunning));
+            }
+            await Task.WhenAll(tasks.ToArray());
         }
 
-        private async Task TaskDisposing()
+        private void SingleThread(int originatorId)
         {
-            _taskDisposingStarted.Set();
-
-
-            Console.WriteLine("TaskDisposing before WaitAsync.");
-            await _semaphoreSlim.WaitAsync();
-            Console.WriteLine("TaskDisposing after WaitAsync.");
-            await Task.Delay(2000);
-            Console.WriteLine("TaskDisposing before Release.");
-            _semaphoreSlim.Release();
-            Console.WriteLine("TaskDisposing after Release.");
-            await Task.Delay(2000);
-            Console.WriteLine("************ TaskDisposing before Dispose.");
-            //_cancellationTokenSource.Cancel();
-            _semaphoreSlim.Dispose();
-            _cancellationTokenSource.Cancel();
-            Console.WriteLine("************ TaskDisposing after Dispose.");
-            Console.WriteLine("TaskDisposing DONE");
-
-        }
-
-        private async Task TaskWaiting(int id)
-        {
-            try
+            var result = new Result()
             {
-                _taskWaitingStarted.Set();
+                OriginatorId = originatorId
+            };
 
-                for (int repeat = 0; repeat < 3; repeat++)
-                {
-                    //await Task.Delay(9_000);
-                    await Task.Delay(1_000);
+            _manualResetEvent.WaitOne();
 
-                    Console.WriteLine($"TaskWaiting({id}) before WaitAsync.");
-
-                    #region Variant with WaitAsync
-                    await _semaphoreSlim.WaitAsync();
-                    #endregion
-
-
-                    #region
-                    //if (!await _semaphoreSlim.WaitAsync(TimeSpan.FromSeconds(10)))
-                    //{
-                    //    Console.WriteLine($"TaskWaiting({id}) after Timeout.");
-                    //    return;
-                    //}
-                    #endregion
-
-                    #region
-                    //if (!await _semaphoreSlim.WaitAsync(TimeSpan.FromSeconds(10), _cancellationTokenSource.Token))
-                    //{
-                    //    Console.WriteLine($"TaskWaiting({id}) after Timeout.");
-                    //    return;
-                    //}
-                    #endregion
-
-                    #region
-                    //await _semaphoreSlim.WaitAsync(_cancellationTokenSource.Token);
-                    #endregion
-
-                    Console.WriteLine($"TaskWaiting({id}) after WaitAsync.");
-
-                    await Task.Delay(2000);
-                    Console.WriteLine($"TaskWaiting({id}) before Release.");
-                    _semaphoreSlim.Release();
-                    Console.WriteLine($"TaskWaiting({id}) after Release.");
-                }
-            }
-            catch (TaskCanceledException)
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            result.TimespanA = Interlocked.Increment(ref _timespan);
+            result.AddedValue = _concurrentDictionary.GetOrAdd(1, (key) =>
             {
-                Console.WriteLine($"TaskWaiting({id}) Canceled.");
-            }
-            catch (Exception ex)
+                var currentCounter = Interlocked.Increment(ref _counter);
+                Thread.Sleep(currentCounter * 400);
+                result.GeneratedValue = $"id:{originatorId:00} c:{currentCounter:00}";
+                return result.GeneratedValue;
+
+            });
+            result.TimespanB = Interlocked.Increment(ref _timespan);
+            
+            Thread.Sleep(500);
+            if (_concurrentDictionary.TryRemove(1, out var removedValue))
             {
-                Console.WriteLine($"TaskWaiting({id}) ERROR {ex.Message}.");
+                result.RemovedValue = removedValue;
+                result.TimespanC = Interlocked.Increment(ref _timespan);
             }
-            finally
-            {
-                Console.WriteLine($"TaskWaiting({id}) DONE.");
-            }
+            
+            sw.Stop();
+            result.Elapsed = sw.Elapsed;
+            _testResults.Enqueue(result);
         }
 
         public Task Cleanup()
         {
+            List<Result> results = new List<Result>();
+
+            while (_testResults.TryDequeue(out var result))
+            {
+                results.Add(result);
+            }
+
+            foreach (var result in results.OrderBy(r => r.OriginatorId))
+            {
+                Console.WriteLine();
+                Console.Write($" Id {result.OriginatorId:00} |");
+                for (int i = 1; i <= _timespan; i++)
+                {
+                    Console.ForegroundColor = Console.BackgroundColor;
+                    if (i == result.TimespanA)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkBlue;
+                    }
+                    if (i == result.TimespanB)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    }
+                    if (i == result.TimespanC)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                    }
+                    Console.Write("■");
+                    Console.ResetColor();
+                }
+
+                Console.Write($"|    ");
+                Console.Write($"[{result.GeneratedValue}]");
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.Write($"[{result.AddedValue}]");
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write($"[{result.RemovedValue}]");
+                Console.ResetColor();
+                Console.Write($"[{result.Elapsed}]");
+            }
+          
             return Task.CompletedTask;
         }
+
     }
 }

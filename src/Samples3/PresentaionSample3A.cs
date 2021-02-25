@@ -6,10 +6,10 @@ using System.Threading.Tasks.Dataflow;
 
 namespace MrMatrix.Net.AllSamples.Samples2
 {
-    public class PresentaionSample2A : IPresentationSample
+    public class PresentaionSample3A : IPresentationSample
     {
 
-        public PresentaionSample2A()
+        public PresentaionSample3A()
         {
 
         }

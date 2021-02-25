@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace MrMatrix.Net.AllSamples.Samples5
 {
-    public class PresentationSample5 : IPresentationSample
+    public class PresentationSample2 : IPresentationSample
     {
         List<Worker> _workers = new List<Worker>();
         ManualResetEvent _barier = new ManualResetEvent(false);
         private bool _override;
 
-        public PresentationSample5(bool @override)
+        public PresentationSample2(bool @override)
         {
             _override = @override;
         }

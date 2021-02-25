@@ -6,65 +6,10 @@ using System.Threading.Tasks.Dataflow;
 
 namespace MrMatrix.Net.AllSamples.Samples2
 {
-
-    public class PresentaionSample2B : PresentaionSampleBase
-    {
-        protected override Task WaitingSimulation() => Task.CompletedTask;
-
-        protected override async Task RegisterSingleCommand(ActionBlock<SimpleCommand> workerBlock, IsolatedState isolatedState, int taskId)
-        {
-            Console.WriteLine($"\t\tTask {taskId:000}\tA");
-            var simpleCommand = new SimpleCommand(isolatedState);
-
-            workerBlock.Post(simpleCommand);
-            
-            Console.WriteLine($"\t\tTask {taskId:000}\tB");
-            var updatedValue = await simpleCommand.UpdatedValue;
-            Console.WriteLine($"\t\tTask {taskId:000}\tC\tupdatedValue={updatedValue}");
-        }
-    }
-
-    public class PresentaionSample2C : PresentaionSampleBase
-    {
-        protected override Task WaitingSimulation() => Task.Delay(100);
-
-        protected override async Task RegisterSingleCommand(ActionBlock<SimpleCommand> workerBlock, IsolatedState isolatedState, int taskId)
-        {
-            Console.WriteLine($"\t\tTask {taskId:000}\tA");
-            var simpleCommand = new SimpleCommand(isolatedState);
-
-            workerBlock.Post(simpleCommand);
-
-            Console.WriteLine($"\t\tTask {taskId:000}\tB");
-            var updatedValue = await simpleCommand.UpdatedValue;
-            Console.WriteLine($"\t\tTask {taskId:000}\tC\tupdatedValue={updatedValue}");
-        }
-    }
-
-    public class PresentaionSample2D : PresentaionSampleBase
-    {
-        protected override Task WaitingSimulation() => Task.Delay(100);
-
-        protected override async Task RegisterSingleCommand(ActionBlock<SimpleCommand> workerBlock, IsolatedState isolatedState, int taskId)
-        {
-            Console.WriteLine($"\t\tTask {taskId:000}\tA");
-            var simpleCommand = new SimpleCommand(isolatedState);
-
-            if (!workerBlock.Post(simpleCommand))
-            {
-                simpleCommand.Abort();
-            }
-
-            Console.WriteLine($"\t\tTask {taskId:000}\tB");
-            var updatedValue = await simpleCommand.UpdatedValue;
-            Console.WriteLine($"\t\tTask {taskId:000}\tC\tupdatedValue={updatedValue}");
-        }
-    }
-
     public abstract class PresentaionSampleBase : IPresentationSample
     {
         private const int DelayBeforeCompletionInMs = 1000;
-        private const int DelayBeforeCleanupInMs = 5000;
+        private const int DelayBeforeCleanupInMs = 6000;
        
         private const int NumberOfProducers = 50;
 

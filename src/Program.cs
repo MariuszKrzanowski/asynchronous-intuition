@@ -1,9 +1,9 @@
 ﻿using MrMatrix.Net.AllSamples.Properties;
+using MrMatrix.Net.AllSamples.Samples1;
+using MrMatrix.Net.AllSamples.Samples2;
 using MrMatrix.Net.AllSamples.Samples3;
 using MrMatrix.Net.AllSamples.Samples4;
 using MrMatrix.Net.AllSamples.Samples5;
-using MrMatrix.Net.AllSamples.Samples1;
-using MrMatrix.Net.AllSamples.Samples2;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -30,16 +30,21 @@ namespace MrMatrix.Net.AllSamples
                 {
                     "1A" => new PresentaionSample1Async(),
                     "1B" => new PresentaionSample1NoAsync(),
-                    "2A" => new PresentaionSample2A(),
-                    "2B" => new PresentaionSample2B(),
-                    "2C" => new PresentaionSample2C(),
-                    "2D" => new PresentaionSample2D(),
-                    "3A" => new PresentationSample3A(),
-                    "3B" => new PresentationSample3B(),
+
+                    "2A" => new PresentationSample2(false),
+                    "2B" => new PresentationSample2(true),
+
+                    "3A" => new PresentaionSample3A(),
+                    "3B" => new PresentaionSample3B(),
+                    "3C" => new PresentaionSample3C(),
+                    "3D" => new PresentaionSample3D(),
+
                     "4A" => new PresentationSample4A(),
                     "4B" => new PresentationSample4B(),
-                    "5A" => new PresentationSample5(false),
-                    "5B" => new PresentationSample5(true),
+
+                    "5A" => new PresentationSample5A(),
+                    "5B" => new PresentationSample5B(),
+
                     _ => null
                 };
 
