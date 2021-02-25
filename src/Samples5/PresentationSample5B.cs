@@ -46,10 +46,9 @@ namespace MrMatrix.Net.AllSamples.Samples4
             Console.WriteLine("************ TaskDisposing before Dispose.");
             //_cancellationTokenSource.Cancel();
             _semaphoreSlim.Dispose();
-            _cancellationTokenSource.Cancel();
+            //_cancellationTokenSource.Cancel();
             Console.WriteLine("************ TaskDisposing after Dispose.");
             Console.WriteLine("TaskDisposing DONE");
-
         }
 
         private async Task TaskWaiting(int id)

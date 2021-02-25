@@ -6,6 +6,4 @@ namespace MrMatrix.Net.AllSamples.Samples1
     {
         Task<decimal> DownloadSomeDecimal();
     }
-
-
 }
